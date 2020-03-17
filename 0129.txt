@@ -1,0 +1,632 @@
+**스트림 API
+=>java.io 패키지에 있는 스트림은 입출력을 위한 스트림
+=>java.util.stream 패키지의 스트림은 Collection에 대한 작업을 위한 스트림 - 1.8 버전에서 추가
+=>기존에는 동일한 자료형의 데이터 여러 개를 다룰 때 Collection 이나 배열을 이용
+Collection 이나 배열을 이용하게 되면 코드가 길어지고 재사용성이 떨어집니다.
+Collection 과 배열에 있는 동일한 작업을 수행하는 메소드가 이름은 같은데 사용방법이 조금씩 다릅니다.
+예를 들면 List 의 정렬을 위한 sort 메소드는 instance 메소드인데 배열의 정렬을 위한 메소드는 Arrays 클래스의 sort 라는 static 메소드입니다.
+배열의 데이터를 하나씩 가져올 때는 [인덱스]를 이용하고 List의 데이터는 get(인덱스)을 이용합니다.
+=>메소드의 매개변수로 인터페이스를 이용하는 경우에 별도의 클래스를 만들거나 anonymous class 를 이용해야 해서 코드가 길어지고 메모리 낭비가 발생했는데 스트림 API에서는 매개변수에 람다식을 사용해서 코드를 간결하게 만들 수 있습니다.
+=>병렬처리도 쉽게 할 수 있음
+
+1.배열(List)의 데이터 접근 
+public class CollectionUse {
+
+	public static void main(String[] args) {
+		//List의 데이터를 사용
+		
+		//배열을 이용해서 List 만들기
+		List<String> list = Arrays.asList("C","Python", "Java");
+		
+		//인덱스를 이용해서 하나씩 접근 - 배열이나 List의 데이터 개수를 알아야 합니다.
+		System.out.println("데이터를 인덱스를 이용해서 하나씩 접근");
+		int length = list.size();
+		int i=0;
+		while(i<length) {
+			String temp = list.get(i);
+			System.out.println(temp);
+			i = i + 1;
+		}
+		
+		System.out.println();
+		System.out.println("반복자(Iterator - Enumeration : __iter__:python)를 이용해서 하나씩 접근");
+		//반복자는 데이터 개수를 알 필요가 없습니다.
+		Iterator<String> iterator = list.iterator();
+		//다음 데이터 존재 여부를 확인하고 다음 데이터에 접근 - 데이터베이스에서는 Cursor 라고 합니다.
+		//데이터베이스 나 C++ 에서는 이런 방법으로 접근을 하지만 Java 나 Python 같은 언어는 다른 방법을 제공
+		while(iterator.hasNext()) {
+			System.out.println(iterator.next());
+		}
+		
+		System.out.println();
+		System.out.println("빠른 열거(for - each)를 이용하는 방법");
+		//반복자가 구현된 객체의 경우는 빠른 열거를 사용하는 것이 가능
+		for(String temp : list) {
+			System.out.println(temp);
+		}
+		
+		System.out.println();
+		System.out.println("스트림을 이용하는 방법");
+		//스트림 생성
+		Stream<String> stream = list.stream();
+		//람다식을 이용해서 메소드의 내용을 매개변수로 대입 - 함수형 프로그래밍
+		//스트림을 만들 때 사용한 Collection의 데이터를 name에 순서대로 대입해서 { }안의 내용을 수행
+		//반복문을 사용하지 않아도 forEach 가 알아서 순서대로 실행
+		//python에서의 numpy 의 ndarray 나 pandas 의 Series, DataFrame 등의 동작방식이 이와 동일
+		stream.forEach((name)->{System.out.println(name);});
+	}
+
+}
+
+2.스트림의 특징
+1)스트림은 데이터 소스를 변경하지 않습니다.
+원본 데이터에 변경을 가하지 않습니다.
+중간 연산한 결과를 별도로 저장할 수 있습니다.
+
+2)스트림은 일회용
+=>한 번 읽고 나면 재사용이 안되므로 다시 만들어서 사용
+
+3)스트림은 작업을 내부적으로 반복해서 처리
+=>반복문이 내부에 숨어있는 것 입니다.
+=>단순하게 스트림을 사용한다고 해서 실행 속도가 빨라지는 것은 아닙니다.
+
+4)다양한 기본 연산 제공
+=>중간 처리(매핑-변환, 필터링, 정렬) 연산과 최종 처리(반복, 카운팅, 평균, 합계) 연산을 제공
+
+5)스트림의 연산은 지연된 연산
+=>중간 연산이 중간에 수행되는 것이 아니고 최종 연산을 수행하기 전에 수행
+
+6)Fork & Join 을 이용해서 병렬처리를 구현하는 것보다 훨씬 쉽게 병렬 처리를 구현
+
+3.Stream 생성
+1)Collection(List, Set) 을 가지고 생성
+=>stream() 을 호출하거나 parellelStream() 을 호출
+
+2)배열을 가지고 생성
+Arrays.stream(배열)
+
+3)디렉토리 경로를 가지고 생성
+Stream<Path> Files.list(Path path): path에 있는 모든 디렉토리 및 파일에 접근할 수 있는 스트림
+
+4)텍스트 파일의 내용을 줄 단위로 접근
+Stream<String> BufferedReader.lines()
+
+5)랜덤한 스트림
+Random.doubles(), ints(), longs() 를 이용
+
+6)배열을 이용해서 스트림을 생성하고 모든 데이터 출력
+//현재 디렉토리에 있는 pl.csv 파일의 내용을 읽어서 문자열 배열 만들기
+		try {
+			//파일을 읽을 수 있는 스트림을 생성
+			BufferedReader br = 
+					new BufferedReader(
+							new InputStreamReader(
+									new FileInputStream("./pl.csv")));
+			//데이터 한 줄 읽기
+			String line = br.readLine();
+			//, 단위로 분할해서 문자열 배열로 만들기
+			String [] ar = line.split(",");
+			//스트림 만들기
+			Stream<String> stream1 = Arrays.stream(ar);
+			//출력
+			stream1.forEach(System.out::println);
+			br.close();
+			
+		}catch(Exception e) {
+			System.out.println("파일 내용 읽기 실패:" + e.getMessage());
+			e.printStackTrace();
+		}
+
+4.스트림의 중간 연산(Reducution)
+=>데이터를 변환, 필터링, 정렬, 그룹화 하는 것 등이 있습니다.
+1)distinct(): 중복 제거 - 요소의 equals 메소드를 가지고 비교해서 equals 가 true를 리턴한 경우를 중복으로 간주
+
+2)filter(): 조건에 맞는 데이터만 필터링
+=>하나의 매개변수를 받아서 boolean을 리턴하는 메소드를 대입
+=>스트림의 모든 데이터를 매개변수에 대입해서 true 리턴한 데이터만 골라서 Stream으로 리턴
+
+3)map(): 데이터를 변환
+=>하나의 매개변수를 받아서 리턴을 해주는 메소드를 대입
+
+4)sorted(): 데이터를 정렬
+=>매개변수가 없으면 Comparable 인터페이스의 compareTo 메소드를 이용해서 비교한 후 오름차순 정렬 수행
+=>매개변수로 Comparator 인터페이스를 구현한 객체나 2개의 매개변수를 받아서 정수를 리턴하는 람다식을 대입하면 대입된 객체나 람다식에 의해서 오름차순 정렬
+앞의 데이터가 크다라고 할 때는 양수를 리턴하면 되고 같으면 0 뒤의 데이터가 클 때는 음수를 리턴
+
+5)peek(): 모든 데이터를 순회하면서 작업을 수행
+=>매개변수로 1개의 데이터를 설정하고 return 이 없는 메소드를 대입
+
+5.중간 연산 실습
+1)번호, 이름, 성별, 나이, 점수를 소유한 DTO(Data Transfer Object - VO) 클래스를 생성
+public class Student {
+	//속성을 변수로 생성
+	private int num;
+	private String name;
+	private String gender;
+	private int age;
+	private int score;
+	
+	//데이터가 없는 경우에 사용할 생성자
+	public Student() {
+		super();
+	}
+	//데이터가 제공되는 경우에 사용할 생성자 - 테스트 할 때 데이터를 빠르게 입력해서 확인하기 위해서 생성
+	public Student(int num, String name, String gender, int age, int score) {
+		super();
+		this.num = num;
+		this.name = name;
+		this.gender = gender;
+		this.age = age;
+		this.score = score;
+	}
+	
+	//접근자 메소드
+	public int getNum() {
+		return num;
+	}
+	public void setNum(int num) {
+		this.num = num;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getGender() {
+		return gender;
+	}
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+	public int getAge() {
+		return age;
+	}
+	public void setAge(int age) {
+		this.age = age;
+	}
+	public int getScore() {
+		return score;
+	}
+	public void setScore(int score) {
+		this.score = score;
+	}
+	
+	//데이터를 빠르게 확인하기 위한 메소드
+	@Override
+	public String toString() {
+		return "Student [num=" + num + ", name=" + name + ", gender=" + gender + ", age=" + age + ", score=" + score
+				+ "]";
+	}
+}
+
+2)main 메소드를 소유한 클래스를 만들고 main 메소드에 작성
+	public static void main(String[] args) {
+		//샘플 데이터 작성
+		Student student1 = new Student(1, "김좌진", "남", 28, 93);
+		Student student2 = new Student(2, "유관순", "여", 19, 89);
+		Student student3 = new Student(3, "김구", "남", 38, 95);
+		Student student4 = new Student(4, "안중근", "남", 29, 100);
+		Student student5 = new Student(5, "남자현", "여", 25, 97);
+		
+		ArrayList<Student> list = new ArrayList<Student>();
+		list.add(student1);
+		list.add(student2);
+		list.add(student3);
+		list.add(student4);
+		list.add(student5);
+		
+		//distinct - 중복을 제거해주는 메소드
+		String [] ar = {"데니스 리치히", "귀도 반 로섬", "제임스 고슬링", "데니스 리치히"};
+		Stream<String> arStream = Arrays.stream(ar);
+		arStream.distinct().forEach(System.out::println);
+		
+		System.out.println();
+		//filter - 조건에 맞는 데이터만 추출하는 중간 연산
+		//filter에는 매개변수 1개를 갖고 boolean을 리턴하는 람다식을 대입
+		Stream <Student> stream = list.stream();
+		//score가 90 보다 큰 데이터만 추출해서 출력
+		//stream.filter((student)->{return student.getScore() > 90;}).forEach(System.out::println);
+		
+		//gender 가 여인 데이터만 추출해서 출력
+		stream.filter((student)->{return student.getGender().equals("여");}).forEach(System.out::println);
+
+		System.out.println();
+		//map()은 데이터를 변환할 때 사용하는 메소드
+		//숫자 -> 문자열, 문자열 -> 숫자, 날짜 -> 문자열, 인스턴스 -> 기본형
+		//Student를 score로 변환
+		stream = list.stream(); //스트림은 한 번 사용하면 소멸되기 때문에 다시 사용할 때는 새로 생성해야 합니다.
+		//어떤 메소드를 수행만 하는 경우에는 클래스이름::메소드이름 만 입력해도 됩니다.
+		//stream.mapToInt((student)->{return student.getScore();}).forEach(System.out::println);
+		stream.mapToInt(Student::getScore).forEach(System.out::println);
+		
+		System.out.println();
+		//데이터 정렬은 sorted 메소드를 이용
+		//각 요소가 크기 비교가 가능하다면 바로 오름차순 정렬을 수행
+		//요소가 크기 비교가 불가능하다면 크기 비교가 가능한 메소드를 대입해야 합니다.
+		//크기 비교가 가능한 데이터는 속성을 하나만 가진 데이터들입니다.
+		//기본 자료형, 문자열, 날짜 정도가 하나의 데이터만을 가진 자료형입니다.
+		
+		//String은 크기 비교가 가능하기 때문에 바로 오름차순 정렬
+		arStream = Arrays.stream(ar);
+		arStream.sorted().forEach(System.out::println);
+		
+		System.out.println();
+		stream = list.stream();
+		//Student는 여러 개의 항목을 소유하고 있기 때문에 어떤 항목으로 크기 비교를 할 지 알지 못하기 때문에 예외가 발생
+		//stream.sorted().forEach(System.out::println);
+		
+		//크기 비교하는 메소드를 만들어서 정렬
+		//크기 비교를 할 때는 2개의 매개변수를 가지고 정수를 리턴하는 메소드를 만들면 됩니다.
+		//양수를 리턴하면 앞의 데이터가 크다고 간주하고 0이면 같다고 음수이면 뒤의 데이터가 크다고 간주
+		
+		//숫자 데이터를 이용해서 비교하는 경우 - 오름차순
+		//stream.sorted((a, b) -> {return a.getScore() - b.getScore();}).forEach(System.out::println);
+		
+		//문자열인 경우는 compareTo 를 이용 - 앞 뒤 순서를 변경하면 내림차순
+		stream.sorted((a, b) -> {return b.getName().compareTo(a.getName());}).forEach(System.out::println);
+	}
+
+3)중간 연산 메소드는 여러 연속해서 사용 가능
+
+6.최종 연산 메소드
+=>마지막에 한번만 사용가능한 메소드
+
+1)매칭과 관련된 메소스
+=>모두 boolean을 리턴
+allMatch()
+anyMatch()
+noneMatch()
+=>3가지 메소드 모두 filter 와 동일한 메소드를 매개변수로 받아서 전부 true 또는 하나 이상 true 또는 모두 false를 리턴하는지 알려주는 메소드
+
+2)데이터 개수
+long count()
+
+3)데이터 합계
+int, long, double sum()
+
+4)평균
+OptionalDouble average()
+=>Optional은 null을 저장할 수 있는 자료형을 최근에는 Optional 이라고 합니다.
+
+5)최대값 및 최소값
+OptionalXXX max()
+OptionalXXX min()
+
+6)누적 연산
+OptionalXXX reduce()
+
+7)모든 요소에게 메소드 수행
+forEach()
+
+8)결과를 저장
+R collect()
+
+7.Optional
+=>어떤 클래스의 객체를 감싸는 클래스
+=>null 이 리턴될 가능성이 있을 때 이 데이터를 바로 사용하면 예외가 발생할 가능성이 존재하기 때문에 null 여부를 확인하고 사용해야 합니다.
+자바는 Optional이라는 자료형을 이용해서 null 인 경우 다른 데이터로 치환할 수 있는 메소드를 제공합니다.
+
+T get(): 값을 가져오고 null 이면 예외 발생
+T orElse(T 기본값): 결과가 null 이면 기본값을 리턴
+boolean isPresent(): null이면 false 그렇지 않으면 true 리턴
+
+=>변형으로는 OptionalInt, OptionalLong, OptionalDouble
+
+8.집계 실습
+	public static void main(String[] args) {
+		// 문자열 배열을 이용해서 스트림을 생성
+		String[] ar = { "Python", "Java", "Closure", "Scala", "Kotlin", "Swift", "C#", "C&C++", "JavaScript" };
+		Stream<String> arStream = Arrays.stream(ar);
+		// 배열의 모든 데이터가 3글자 이상인지 확인 - C# 때문에 false
+		// anyMatch는 true - any는 하나라도 만족하면 true
+		// noneMatch는 false - 하나도 만족하는게 없으면 true
+		boolean r = arStream.allMatch((language) -> {
+			return language.length() > 3;
+		});
+		System.out.println(r);
+		System.out.println();
+
+		// 집계함수를 사용
+		// 샘플 데이터 작성
+		Student student1 = new Student(1, "김좌진", "남", 28, 93);
+		Student student2 = new Student(2, "유관순", "여", 19, 89);
+		Student student3 = new Student(3, "김구", "남", 38, 95);
+		Student student4 = new Student(4, "안중근", "남", 29, 100);
+		Student student5 = new Student(5, "남자현", "여", 25, 97);
+		ArrayList<Student> list = new ArrayList<Student>();
+		list.add(student1);
+		list.add(student2);
+		list.add(student3);
+		list.add(student4);
+		list.add(student5);
+		
+		Stream<Student> stream = list.stream();
+		//점수의 합계 구하기
+		int tot = stream.mapToInt(Student::getScore).sum();
+		System.out.println("score 합계:" + tot);
+		System.out.println();
+		
+		stream = list.stream();
+		//남자 나이 합계
+		tot = stream.filter((student)->{return student.getGender().equals("남");})
+				.mapToInt(Student::getAge).sum();
+		System.out.println("남자 나이 합계:" + tot);
+		System.out.println();
+		//데이터 개수
+		stream = list.stream();
+		long cnt = stream.filter((student)->{return student.getGender().equals("여");}).count();
+		System.out.println("데이터 개수:" + cnt);
+		System.out.println();
+		
+		//gender가 여 인 데이터의 score 평균
+		stream = list.stream();
+		//Optional은 기존 자료형의 데이터를 wrapping 한 자료형
+		OptionalDouble avg = stream.filter((student)->{return student.getGender().equals("여자");})
+			.mapToInt(Student::getScore).average();
+		//getAsDouble 로 가져오면 결과가 null 일 때 예외가 발생
+		//orElse에서 기본값을 설정하면 결과가 null일 때 기본값을 리턴
+		System.out.println("여자 score 평균:" + avg.orElse(0));
+		System.out.println();
+		
+		//max 나 min 은 Comaparator.comparing자료형(비교할 데이터의 메소드) 를 대입하면 Optional<제너릭> 으로 결과를 리턴
+		//Score의 최대값
+		stream = list.stream();
+		Optional<Student> result = stream.filter((student)->{return student.getGender().equals("남");})
+			.max(Comparator.comparingInt(Student::getScore));
+		System.out.println("남자 최저 점수:" + result.get());
+		
+
+	}
+
+9.collect
+=>collect를 이용해서 중간 결과를 List 나 Set으로 리턴받고자 하면 이 때는 collect에 매개변수로 Collectors.toList 또는 toSet을 대입하면 됩니다.
+
+=>결과를 Map으로 저장하고자 하면 Collectors.toMap(키로 사용할 데이터를 리턴해주는 메소드, 매개변수 1개를 가지고 리턴하는 메소드)를 대입하면 됩니다.
+앞의 메소드 결과로 key를 만들고 뒤의 메소드 결과를 value를 만듭니다.
+
+=>toList() 대신에 counting()을 설정하면 long 타입의 데이터 개수를 리턴
+=>summingInt 나  summingDouble 메소드에 mapToInt 나 mapToDouble을 대입하면 합계를 리턴
+=>averagingInt 나  averagingDouble 메소드에 mapToInt 나 mapToDouble을 대입하면 평균을 리턴
+=>maxBy 나  minBy 메소드에 비교하는 메소드를 대입하면 최대값이나 최소값을 리턴
+최대나 최소는 실제 값이 아니고 최대값이나 최소값을 가진 데이터를 리턴
+
+10.collect 실습
+	public static void main(String[] args) {
+		// 집계함수를 사용
+		// 샘플 데이터 작성
+		Student student1 = new Student(1, "김좌진", "남", 28, 93);
+		Student student2 = new Student(2, "유관순", "여", 19, 89);
+		Student student3 = new Student(3, "김구", "남", 38, 95);
+		Student student4 = new Student(4, "안중근", "남", 29, 100);
+		Student student5 = new Student(5, "남자현", "여", 25, 97);
+		ArrayList<Student> list = new ArrayList<Student>();
+		list.add(student1);
+		list.add(student2);
+		list.add(student3);
+		list.add(student4);
+		list.add(student5);
+		
+		Stream<Student> stream = list.stream();
+		//gender 의 값이 남 인 데이터만 가지고 List를 생성
+		List<Student> manList = 
+				stream.filter((student)->{return student.getGender().equals("남"); })
+				.collect(Collectors.toList());
+		for(Student temp : manList) {
+			System.out.println(temp);
+		}
+		
+		//gender의 값이 여인 데이터를 가지고 name을 key로 하고 전체를 value로 하는 Map을 생성
+		stream = list.stream();
+		Map<String, Student> womanMap = 
+				stream.filter((student)->{return student.getGender().equals("여"); })
+				.collect(Collectors.toMap(Student::getName, (student)->{return student;}));
+		//Map의 모든 데이터 출력
+		System.out.println();
+		Set<String> keys = womanMap.keySet();
+		for(String key : keys) {
+			System.out.println(key + ":" + womanMap.get(key));
+		}
+		
+		System.out.println();
+		stream = list.stream();
+		long count = 
+				stream.filter((student)->{return student.getGender().equals("여"); })
+				.collect(Collectors.counting());
+		System.out.println("여자 인원수:" + count);
+	}
+
+11.grouping 이 가능
+=>collect 메소드에 Collectors.groupingBy()를 이용해서 그룹화가 가능
+어떤 메소드의 결과로 그룹화 할 것인지를 설정하면 됩니다.
+=>두번째 매개변수로 구하고자 하는 집계함수를 설정하면 그룹화 한 후 집계도 가능
+counting(), averagingDouble(), maxBy(), minBy(), summingInt, summingLong, summingDouble() 등으로 합계도 구할 수 있음
+=>결과는 그룹화 하는 함수의 결과를 key로 해서 Map으로 리턴합니다.
+=>데이터들만 규격화가 잘 되어 있다면 데이터베이스의 sql을 사용하는 것처럼 사용이 가능
+
+11.그룹화 실습
+public class GroupingMain {
+
+	public static void main(String[] args) {
+		// 집계함수를 사용
+		// 샘플 데이터 작성
+		Student student1 = new Student(1, "김좌진", "남", 28, 93);
+		Student student2 = new Student(2, "유관순", "여", 19, 89);
+		Student student3 = new Student(3, "김구", "남", 38, 95);
+		Student student4 = new Student(4, "안중근", "남", 29, 100);
+		Student student5 = new Student(5, "남자현", "여", 25, 97);
+
+		ArrayList<Student> list = new ArrayList<Student>();
+		list.add(student1);
+		list.add(student2);
+		list.add(student3);
+		list.add(student4);
+		list.add(student5);
+
+		// List를 Stream으로 변환
+		Stream<Student> stream = list.stream();
+
+		// stream으로 그룹화
+		Map<String, List<Student>> map = stream.collect(Collectors.groupingBy(Student::getGender));
+
+		Set<String> keys = map.keySet();
+		for (String key : keys) {
+			System.out.println(key + ":" + map.get(key));
+		}
+
+		System.out.println();
+		// 스트림은 한 번 소모하면 소멸됩니다.
+		// 새로운 작업을 수행할 때 마다 스트림은 다시 생성
+		stream = list.stream();
+		// gender 별로 그룹화 한 후 score의 평균 구하기
+		Map<String, Double> result = stream
+				.collect(Collectors.groupingBy(
+						Student::getGender, Collectors.averagingDouble(Student::getScore)));
+		keys = result.keySet();
+		for (String key : keys) {
+			System.out.println(key + ":" + result.get(key));
+		}
+		
+		stream = list.stream();
+		//그룹화는 존재하는 메소드를 이용해도 되지만 람다로 직접 만들어도 됩니다.
+		//하나의 매개변수(스트림의 제너릭)를 받아서 데이터를 리턴하는 람다 식이면 됩니다.
+		Map<String, Integer> result1 = stream
+				.collect(Collectors.groupingBy(
+						(student)->{return student.getName();}, 
+						Collectors.summingInt(Student::getScore)));
+		keys = result1.keySet();
+		for (String key : keys) {
+			System.out.println(key + ":" + result1.get(key));
+		}
+		
+		//성별 최대 인 데이터를 추출
+		stream = list.stream();
+		// gender 별로 그룹화 한 후 score의 평균 구하기
+		Map<String, Optional<Student>> result2 = stream
+				.collect(Collectors.groupingBy(
+						Student::getGender, Collectors.maxBy(
+								Comparator.comparingInt(Student::getScore))));
+		keys = result2.keySet();
+		//Optional은 출력할 때 Optional과 함께 출력되기 때문에 이를 벗겨내기 위해서는 get() 이나 orElse()를 이용
+		for (String key : keys) {
+			System.out.println(key + ":" + result2.get(key).get());
+		}
+	}
+
+}
+
+12.병렬 스트림
+=>java 1.8 이전 까지는 데이터의 모임에 병렬처리를 할려면 fork&join API를 사용
+이 API가 사용이 어려움
+
+=>Stream API에서는 병렬 스트림을 만들기만 하면 자동으로 병렬 처리를 수행
+스트림을 만들 때 stream() 메소드 대신에 parallelStream() 메소드를 호출하면 병렬 스트림이 됩니다.
+Stream API는 데이터 병렬성으로 구현
+데이터들을 작은 데이터로 분할해서 작업하는 형태
+
+=>작업의 병렬성
+여러 작업의 요청이 올 때 작업들을 개별 스레드로 만들어서 병렬처리하는 방식으로 웹 서버가 대표적인 작업의 병렬성을 구현한 예
+
+실습
+	//문자열을 매개변수로 받아서 2초 후에 출력하는 메소드
+	public static void work(String str) {
+		try {
+			Thread.sleep(2000);
+			System.out.println(str);
+		}catch(Exception e) {}
+	}
+	
+	public static void main(String[] args) {
+		String [] ar = {"일", "이", "삼", "사", "오"};
+		List<String>list = Arrays.asList(ar);
+		
+		Stream <String> arStream = list.stream();
+		//일반 스트림을 생성해서 ar에 work를 수행 - 10초 정도 소요
+		long start = System.currentTimeMillis();
+		
+		arStream.forEach((data) -> {work(data);});
+		
+		long end = System.currentTimeMillis();
+		System.out.println("순차 처리:" + (end-start));
+		
+		//병렬 스트림을 생성해서 work를 수행 - cpu 코어 개수에 따라 걸리는 시간이 다름
+		//코어가 5개 이상이면 한 번에 수행하므로 2초 정도 소요
+		//데이터의 모임을 가지고 작업을 수행하는 경우 다른 데이터의 영향을 전혀 받지않고 수행되는 경우에는 병렬처리를 하는 것이 시간으로는 이득
+		//앞의 데이터의 연산 결과를 가지고 다음 작업을 수행하는 작업은 병렬처리를 하는 것이 곤란
+		//필터링 같은 경우는 병렬처리를 수행하기 좋은 작업 - 이러한 처리 방식을 Map-Reduce 라고 합니다.
+		//각각의 데이터에서 작업을 처리한 후 그 결과를 모아서 리턴
+		Stream <String> parellelStream = list.parallelStream();
+		start = System.currentTimeMillis();
+		
+		parellelStream.forEach((data) -> {work(data);});
+		
+		end = System.currentTimeMillis();
+		System.out.println("병렬 처리:" + (end-start));
+
+	}
+
+**최근 언어의 자료형 구분
+예전에는 value 형 과 reference 형으로 구분
+수정 가능 여부에 따른 구분(mutable 과 immutable)
+scala 와 vector 구분(데이터 개수를 구분)
+null 저장 가능 여부(Optional 과 NonOptional)
+
+legacy - 전통적인, 예전의 방식
+
+변수를 선언할 때 뒤에 !를 붙이면 null 저장가능
+
+String temp = "Hello"; // 초기값을 설정하지 않으면 에러
+String n!; //초기값을 설정하지 않으면 null - 이 데이터는 사용할 때 null 여부를 확인해야 합니다.
+
+**Design Pattern
+=>인스턴스의 사용용도에 따라 클래스의 모양을 만드는 것
+1.생성에 관련된 패턴
+1)Singleton Pattern
+=>인스턴스를 1개만 생성해서 사용하는 패턴
+=>관리자 클래스(Controller) 나 공유 데이터를 소유한 클래스 또는 서버에서 클라이언트의 요청을 처리하는 클래스 등에 적용
+=>Java Server를 만들기 위한 Framework인 Spring 은 기본적으로 클래스를 디자인해서 인스턴스를 만들면 Singleton Pattern으로 사용
+
+=>클래스 디자인
+public class Singleton {
+	//싱글톤 패턴 적용
+	
+	//생성자를 private으로 생성
+	private Singleton() {};
+	
+	//자신의 자료형과 동일한 자료형의 static 변수를 생성
+	private static Singleton obj;
+	
+	//obj가 null일 때만 인스턴스를 생성하고 리턴하는 메소드를 static으로 생성
+	public static Singleton sharedInstance() {
+		if(obj == null) {
+			obj = new Singleton();
+		}
+		return obj;
+	}
+}
+
+=>확인
+public class DesignPatternMain {
+
+	public static void main(String[] args) {
+		Singleton s1 = Singleton.sharedInstance();
+		Singleton s2 = Singleton.sharedInstance();
+		//해시코드 출력 - 싱글톤 패턴으로 디자인되서 해시코드가 동일
+		System.out.println(System.identityHashCode(s1));
+		System.out.println(System.identityHashCode(s2));
+
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,158 @@
+**예외처리
+1.예외처리 구조
+try{
+	예외가 발생할 가능성이 있는 구문
+}
+catch(예외클래스 변수명){
+	예외 클래스에 해당하는 예외가 발생했을 때 처리할 구문
+}
+catch...
+
+finally{
+	예외 발생 여부에 상관없이 수행하는 구문
+}
+=>try 가 나오면 반드시 1개 이상의 catch 나 finally가 와야 합니다.
+=>catch는 여러 번 나올 수 있는데 위쪽의 catch에 아래쪽 catch 보다 상위 클래스 예외를 처리하는 것은 안됩니다.
+상위 클래스 타입의 참조형 변수에는 하위 클래스 타입의 인스턴스 참조를 대입할 수 있습니다.
+=>try, catch, finally 별도의 블럭이기 때문에 각 블럭에서 만든 변수는 그 블럭에서만 사용 가능
+
+2.최상위 예외
+java.lang.Trowable
+=>메소드
+String getMessage(): 예외 내용을 문자열로 리턴
+void printStackTrace(): 예외 발생 내역을 역추적해서 출력
+
+3.도달할 수 없는 코드 에러
+try {
+	int [] ar = {100, 300};
+	System.out.println(ar[2]); //ArrayIndexOutOfBoundsException 발생
+}
+		
+//Exception 클래스가 ArrayIndexOutOfBoundsException 의 상위 클래스라서
+//예외가 발생하면  Exception이 처리
+//아래 catch 구문은 도달할 수 없는 코드가 됩니다.
+catch(Exception e) {
+	System.err.println(e.getMessage());
+}
+catch(ArrayIndexOutOfBoundsException e) {
+	System.out.println("예외가 발생했습니다.");
+	//예외 메시지 내용을 출력
+	//출력하는 텍스트 색상을 변경하기 위해서 out 대신에 err 사용
+	System.err.println(e.getMessage());
+}
+
+4.모든 예외를 하나의 catch에서 처리하고자 할 때는 예외 클래스를 Exception 이나 Throwable을 설정하면  됩니다.
+
+5.throws
+=>메소드를 만들 때 매개변수 뒤에 throws를 기재하고 예외클래스 이름을 작성하면 이 메소드를 호출한 곳에서 예외를 반드시 처리해야 합니다.
+자바는 RuntimeException 이외에 예외가 발생할 가능성이 있는 메소드의 경우 예외 처리를 강제하는 경우가 있습니다.
+=>main 메소드에 throws 예외클래스 이름을 붙이면 예외처리를 하지 않아도 됩니다.
+main 메소드는 jvm이 호출하는 메소드라서 main에서 예외를 다른곳에서 처리하도록 하면 jvm이 예외를 처리하게 됩니다.
+권장하지는 않습니다.
+
+6.예외처리를 반드시 해야 하는 경우
+java.lang.Thread 클래스의 sleep 이라는 메소드는 밀리초 단위를 매개변수로 받아서 매개변수 만큼 스레드를 중지시켜주는 메소드 입니다.
+이 메소드를 이용해서 10초 동안 1초마다 Hello Exception 출력하기
+
+public static void main(String[] args) {
+	int i = 0;
+	while(i < 10) {
+		System.out.println("Hello Exception");
+		try {
+			//sleep 메소드는 InterruptedException 이 발생할 가능성이 있으므로
+			//이 예외에 대한 처리를 해야주어야만 합니다.
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		i = i + 1;
+	}	
+}
+
+
+7.예외 강제 발생
+=>예외가 발생할 상황이 아닌데 강제로 예외를 발생시킬 수 있는데 이 때는 throw 예외객체
+예외 객체를 만들 때는 new 예외클래스이름(메시지) 형태로 작성
+
+8.사용자 정의 예외 클래스
+=>Exception 클래스로부터 상속받아서 생성
+
+9.try - with - resources
+=>1.7 버전부터 지원
+try(인스턴스 생성){
+	인스턴스를 사용
+}catch(예외 클래스 이름 변수명){
+	예외처리 구문
+}
+=>try( )안에서 생성한 자원은 예외 발생 여부에 상관없이 catch 구문 뒤에서 자동으로 해제를 합니다.
+try( )안에서 생성한 자원은 close()를 호출할 필요가 없습니다.
+
+예전 구문
+Socket socket = null;
+try{
+	socket = 소켓 생성
+	socket 사용;
+}catch(예외클래스 변수명){
+	예외가 발생했을 때 처리할 구문;
+}finally{
+	socket.close();
+}
+
+1.7이후에 가능한 구문
+try(Socket socket = 소켓생성){
+	socket 사용;
+}catch(예외클래스 변수명){
+	예외가 발생했을 때 처리할 구문;
+}
+소켓은 try - catch 구문을 나오면 자동으로 자원 해제가 됩니다.
+
+**java.lang 패키지
+=>자바의 기본 패키지
+=>이 패키지는 import 하지 않아도 패키지 이름을 생략 가능
+
+1.Object 클래스
+=>자바의 최상위 클래스
+=>자바의 모든 클래스는 Object 클래스로부터 상속됨
+=>이 클래스의 모든 속성이나 메소드는 다른 모든 클래스에서 사용 가능
+=>이 클래스는 자바의 모든 클래스의 공통된 내용을 가지기 위해서 만들어진 클래스라서 인스턴스 생성은 하지 않습니다.
+
+Object	clone(): 복제를 위한 메소드인데 재정의 해서 사용
+
+boolean	equals(Object obj): 인스턴스의 내용을 비교하기 위한 메소드로 재정의해서 사용
+ ==: 참조형의 경우 참조가 같은지 비교
+ equals: 참조형에서 내부 데이터가 같은지 비교
+
+int hashCode(): 인스턴스의 해시코드(참조)를 리턴해주는 메소드
+해시코드가 같으면 동일한 메모리 영역을 참조하는 것
+
+wait 나 notify 메소드는 멀티스레드에서 사용하는 메소드
+
+String toString(): 인스턴스를 문자열로 표현하기 위한 메소드
+                        이 메소드는 직접 호출해도 되지만 출력하는 메소드에 인스턴스를 대입하면 자동 호출
+                        재정의하지 않으면 클래스이름과 해시코드를 리턴
+
+실습
+=>번호와 이름을 갖는 클래스
+
+
+
+**기본형(Scala type) 과 참조형(Vector type)
+=>기본형은 변수 자체가 데이터이고 참조형은 변수가 데이터가 저장된 곳의 참조를 의미
+==는 변수를 비교하는 연산자
+기본형의 경우는 데이터를 비교하지만 참조형의 경우는 데이터를 비교하는 것이 아니고 데이터의 참조를 비교
+
+String str = sc.nextLine();
+
+String msg = "문자열";
+
+str에 입력한 내용과 msg에 저장한 내용이 같더라도 == 로 비교하면 false가 나올 수 있습니다.
+참조형 데이터의 경우 내용을 비교할 때 equals 메소드를 이용합니다.
+String은 equals가 재정의 되어 있어서 equals를 이용하면 내용 비교가 가능
+
+
+
+
+
+
+
+

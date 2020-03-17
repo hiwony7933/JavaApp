@@ -1,0 +1,400 @@
+**오라클 연동
+1.프로젝트에 ojdbc.jar 파일을 복사하고 build path에 추가
+
+2.접속 정보를 저장할 텍스트 파일을 생성
+=>프로젝트 안에 db.txt 파일을 생성하고 작성
+oracle.jdbc.driver.OracleDriver
+jdbc:oracle:thin:@211.183.7.61:1521:xe
+user00
+user00
+
+3.main 메소드를 소유한 Main 클래스를 만들고 접속하는 코드를 작성
+public static void main(String[] args) {
+		try (BufferedReader br = new BufferedReader(
+				new InputStreamReader(new FileInputStream("./db.txt")))){
+			String driverClass = br.readLine();
+			//System.out.println(driverClass);
+			String url = br.readLine();
+			String id = br.readLine();
+			String pw = br.readLine();
+			
+			//드라이버 클래스 로드
+			Class.forName(driverClass);
+			//데이터베이스 연결 객체 생성
+			Connection con = DriverManager.getConnection(url, id, pw);
+			//System.out.println(con);
+			
+			
+			con.close();
+			
+		}catch(Exception e) {
+			System.out.println("데이터베이스 예외:" + e.getMessage());
+			e.printStackTrace();
+		}
+
+	}
+
+4.SQL 실행
+1)Select 를 제외한 구문
+PreparedStatement pstmt = con.prepareStatement("SQL 작성");
+=>입력받는 값들은 ?로 설정
+pstmt.set자료형(?번호, 실제 데이터);
+?개수 만큼 정확하게 매핑
+
+int result = pstmt.executeUpdate();
+//리턴되는 값은 영향받은 행의 개수입니다.
+//0이 리턴되면 조건에 맞는 데이터가 없는 것이고 1이상의 숫자면 테이블에 변화가 생김
+//sql 이 잘못되면 예외가 발생
+
+pstmt.close();
+
+2)삽입하는 구문을 con.close 앞에 추가
+//삽입하는 구문
+			PreparedStatement pstmt = 
+				con.prepareStatement(
+					"insert into transactions(num, itemcode, itemname, price, cnt, transdate, userid) "
+					+ "values(?,?,?,?,?,?,?)");
+			
+			pstmt.setInt(1, 2);
+			pstmt.setString(2, "t1000");
+			pstmt.setString(3, "터미네이터");
+			pstmt.setInt(4, 200000);
+			pstmt.setInt(5, 1);
+			
+			Calendar cal = new GregorianCalendar(1984, 2, 27, 00, 00, 00);
+			//java.sql.Date
+			Date transdate = new Date(cal.getTimeInMillis());
+			pstmt.setDate(6, transdate);
+			
+			pstmt.setString(7, "아놀드 슈왈츠제네거");
+			
+			int result = pstmt.executeUpdate();
+			if(result > 0) {
+				System.out.println("삽입 성공");
+			}
+			pstmt.close();
+
+
+3)수정하는 구문을 삽입하는 구문 대신에 작성하고 실행
+PreparedStatement pstmt = 
+				con.prepareStatement(
+					"update transactions set itemcode=?, itemname=?, price=?,"
+					+ " cnt=?, transdate=?, userid=?"
+					+ " where num = ?");
+			
+			//값 검증 작업을 해야 합니다.
+			
+			pstmt.setString(1, "t1000");
+			pstmt.setString(2, "터미네이터");
+			pstmt.setInt(3, 2000);
+			pstmt.setInt(4, 2);
+			
+			Calendar cal = new GregorianCalendar(1984, 2, 27, 00, 00, 00);
+			//java.sql.Date
+			Date transdate = new Date(cal.getTimeInMillis());
+			pstmt.setDate(5, transdate);
+			
+			pstmt.setString(6, "아놀드 슈왈츠제네거");
+			pstmt.setInt(7, 3);
+			
+			int result = pstmt.executeUpdate();
+			if(result > 0) {
+				System.out.println("수정 성공");
+			}else if(result == 0) {
+				System.out.println("조건에 맞는 데이터가 없습니다.");
+			}
+			pstmt.close();
+
+4)삭제하는 구문을 수정하는 구문 대신 작성하고 실행
+PreparedStatement pstmt = 
+					con.prepareStatement(
+						"delete from transactions where num = ?");
+			pstmt.setInt(1, 2);
+			
+			int result = pstmt.executeUpdate();
+			if(result > 0) {
+				System.out.println("삭제 성공");
+			}else if(result == 0) {
+				System.out.println("조건에 맞는 데이터가 없습니다.");
+			}
+			pstmt.close();
+
+2.복호화가 불가능한 암호화
+=>비밀번호와 같은 데이터를 저장할 때는 관리자도 알아볼 수 없도록 복호화가 불가능한 형태로 저장해야 합니다.
+=>Java 에서 JBCrypt 라이브러리를 이용해서 구현
+암호화할 때는 BCrypt.hashpw(String 평문, BCrypt.getSalt());
+비교할 때는 BCrypt.checkpw(String 평문, String 암호화된 문장) :  두 개가 일치하면 true 그렇지 않으면 false
+암호화를 할 때는 최소 64자리 이상 저장할 수 있어야 합니다.
+
+1)www.mvnrepository.com에서 jbcrypt를 검색해서 다운로드 받아서 프로젝트에 복사하고 build path에 추가
+
+2)데이터를 삽입하는 구문을 수정
+			//데이터베이스에 데이터를 저장하거나 수정할 때 사용할 수 없는 단어를 확인해서 저장하거나 수정하는 것이 좋습니다.
+			//특히 SQL 예약어는 확인해서 데이터로 사용하지 못하도록 하는 것이 좋습니다.
+			/*
+			String [] stop_words = {"or", "and"};
+			
+			PreparedStatement pstmt = 
+					con.prepareStatement(
+						"insert into transactions(num, itemcode, itemname, price, cnt, transdate, userid) "
+						+ "values(?,?,?,?,?,?,?)");
+				
+				pstmt.setInt(1, 5);
+				String str = "dkdskfasadsfand";
+				//stop_words의 모든 데이터를 순회
+				for(String temp : stop_words) {
+					//indexOf는 temp가 몇번째 있는지 검색해주는 메소드
+					//찾으면 찾은 위치를 리턴하고 못찾으면 -1을 리턴
+					if(str.indexOf(temp) >= 0) {
+						System.out.println("사용할 수 없는 단어가 포함되어 있습니다.");
+						//return 하면 작업을 수행하지 않음
+						//return;
+						
+						//찾으면 ""으로 치환 - 제거
+						str = str.replace(temp, "");
+					}
+				}
+				//id 나 검색어 등은 모두 대문자 또는 모두 소문자로 변경해서 저장하는 것이 일반적
+				pstmt.setString(2, str.toUpperCase());
+				pstmt.setString(3, BCrypt.hashpw("터미네이터", BCrypt.gensalt()));
+				pstmt.setInt(4, 200000);
+				pstmt.setInt(5, 1);
+				
+				Calendar cal = new GregorianCalendar(1984, 2, 27, 00, 00, 00);
+				//java.sql.Date
+				Date transdate = new Date(cal.getTimeInMillis());
+				pstmt.setDate(6, transdate);
+				
+				pstmt.setString(7, "아놀드 슈왈츠제네거");
+				
+				int result = pstmt.executeUpdate();
+				if(result > 0) {
+					System.out.println("삽입 성공");
+				}
+				pstmt.close();
+
+3.Transaction
+=>한번에 이루어 져야 하는 작업의 논리적인 단위
+=>SQL은 명령어 단위로 실행되는데 실제 업무에서는 여러 개의 SQL이 모여서 하나의 작업을 구성하는 경우가 많습니다.
+이런 경우에는 트랜잭션을 만들어서 전부 수행되거나 전부 수행되지 않도록 해주어야 합니다.(All Or Nothing)
+
+1)commit 과 rollback
+=>commit은 현재까지 수행한 내용을 원본에 반영
+=>rollback은 현재까지 수행한 내용을 원본에 반영하지 않음
+=>savepoint는 rollback할 지점을 생성
+
+2)트랜잭션 처리 방법
+auto commit: SQL 문장이 성공적으로 수행될 때 마다 바로 commit
+
+manual commit: 명식적으로 commit이나 rollback을 호출해야 하는 방법
+
+3)트랜잭션 생성
+=>commit 이나 rollback을 한 후 첫번째 DML(insert, update, delete)을 만났을 때 생성
+
+4)commit을 하지 않아도 commit을 수행하고 트랜잭션을 종료하는 경우
+=>접속 프로그램을 정상적으로 종료할 때
+=>DDL(create, alter, drop, truncate, rename) 이나 DCL(grant, revoke)을 성공적으로 수행한 경우
+
+5)자동으로 rollback 되는 경우
+=>데이터베이스나 접속 프로그램이 비정상적으로 종료되는 경우
+
+6)java에서의 트랜잭션 처리
+=>java는 기본적으로 auto commit
+=>manual commit을 하고자 하는 경우에는 Connection 객체가 setAutoCommit(false)를 호출하고 Connection 객체 가지고 commit() 이나 rollback()을 호출하면 됩니다.
+
+4.select 구문 실행
+=>SELETE 구문은 PreparedStatement 객체를 가지고 executeQuery()를 호출하면 됩니다.
+ResultSet을 리턴합니다.
+=>ResultSet은 조회된 데이터에 접근할 수 있는 Cursor의 역할을 합니다.
+next() 메소드를 이용해서 다음 데이터가 있는지 확인하고 있으면 다음 데이터를 가리킵니다.
+=>각 컬럼의 데이터를 읽고자 하는 경우에는 ResultSet.get자료형(컬럼의 인덱스 또는 컬럼이름) 으로 가져옵니다.
+
+=>데이터를 읽어서 다른 곳에서 사용을 하고자 할 때는 검색된 데이터를 하나의 변수에 저장을 해야 합니다.
+여러 개의 데이터의 경우는 컬럼의 데이터를 저장할 수 있는 DTO 클래스를 생성하거나 Map을 이용해서 저장하고 이러한 DTO 클래스나 Map 클래스의 인스턴스들은 List에 저장합니다.
+이런 구조를 R 이나 Python의 pandas에서는 DataFrame 이라고 합니다.
+Map의 List 구조입니다.
+
+	public static void main(String[] args) {
+		try (BufferedReader br = new BufferedReader(
+				new InputStreamReader(new FileInputStream("./db.txt")))){
+			String driverClass = br.readLine();
+			//System.out.println(driverClass);
+			String url = br.readLine();
+			String id = br.readLine();
+			String pw = br.readLine();
+			
+			//드라이버 클래스 로드
+			Class.forName(driverClass);
+			//데이터베이스 연결 객체 생성
+			Connection con = DriverManager.getConnection(url, id, pw);
+			
+			//transactions 테이블의 모든 데이터 가져오기
+			PreparedStatement pstmt = con.prepareStatement("select * from transactions");
+			ResultSet rs = pstmt.executeQuery();
+			
+			//여러 개의 컬럼으로 구성된 여러 개의 데이터를 저장
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			
+			//데이터를 순회
+			while(rs.next()) {
+				//하나의 행을 저장할 Map을 생성
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("num", rs.getInt("num"));
+				map.put("itemcode", rs.getString("itemcode"));
+				//3번째 컬럼의 값을 문자열로 가져오기
+				map.put("itemname", rs.getString(3));
+				map.put("price", rs.getInt("price"));
+				map.put("cnt", rs.getInt("cnt"));
+				map.put("transdate", rs.getDate("transdate"));
+				map.put("userid", rs.getString("userid"));
+				
+				//하나의 행을 list에 저장
+				list.add(map);
+			}
+			
+			//list의 데이터 출력
+			for(Map<String, Object> map : list) {
+				//System.out.println(map);
+				System.out.println(map.get("num"));
+			}
+			
+			rs.close();
+			pstmt.close();
+			con.close();
+		}catch(Exception e) {
+			System.out.println("데이터베이스 예외:" + e.getMessage());
+			e.printStackTrace();
+		}
+		
+
+	}
+
+
+=>DTO 패턴: Map 대신에 여러 개의 데이터를 저장할 수 있는 별도의 클래스를 만들어서 사용하는 패턴
+이러한 클래스를 DTO(Data Transfer Object) 또는 VO(Variable Object) 또는 Domain 클래스라고 합니다.
+
+public class Transaction {
+	private int num;
+	private String itemcode;
+	private String itemname;
+	private int price;
+	private int cnt;
+	private Date transdate;
+	private String userid;
+	
+	public Transaction() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	public Transaction(int num, String itemcode, String itemname, int price, int cnt, Date transdate, String userid) {
+		super();
+		this.num = num;
+		this.itemcode = itemcode;
+		this.itemname = itemname;
+		this.price = price;
+		this.cnt = cnt;
+		this.transdate = transdate;
+		this.userid = userid;
+	}
+	public int getNum() {
+		return num;
+	}
+	public void setNum(int num) {
+		this.num = num;
+	}
+	public String getItemcode() {
+		return itemcode;
+	}
+	public void setItemcode(String itemcode) {
+		this.itemcode = itemcode;
+	}
+	public String getItemname() {
+		return itemname;
+	}
+	public void setItemname(String itemname) {
+		this.itemname = itemname;
+	}
+	public int getPrice() {
+		return price;
+	}
+	public void setPrice(int price) {
+		this.price = price;
+	}
+	public int getCnt() {
+		return cnt;
+	}
+	public void setCnt(int cnt) {
+		this.cnt = cnt;
+	}
+	public Date getTransdate() {
+		return transdate;
+	}
+	public void setTransdate(Date transdate) {
+		this.transdate = transdate;
+	}
+	public String getUserid() {
+		return userid;
+	}
+	public void setUserid(String userid) {
+		this.userid = userid;
+	}
+	
+	@Override
+	public String toString() {
+		return "Transaction [num=" + num + ", itemcode=" + itemcode + ", itemname=" + itemname + ", price=" + price
+				+ ", cnt=" + cnt + ", transdate=" + transdate + ", userid=" + userid + "]";
+	}
+	
+	
+}
+
+=>데이터 읽어서 DTO의 List 만들기
+List<Transaction> list = new ArrayList<Transaction>();
+			while(rs.next()) {
+				Transaction transaction = new Transaction();
+				
+				
+				transaction.setNum(rs.getInt("num"));
+				transaction.setItemcode(rs.getString("itemcode"));
+				transaction.setItemname(rs.getString("itemname"));
+				transaction.setPrice(rs.getInt("price"));
+				transaction.setCnt(rs.getInt("cnt"));
+				transaction.setTransdate(rs.getDate("transdate"));
+				transaction.setUserid(rs.getString("userid"));
+				
+				list.add(transaction);
+			}
+			
+			for(Transaction transaction : list) {
+				//System.out.println(transaction);
+				System.out.println(transaction.getNum() + ":" + transaction.getItemname());
+			}
+			
+
+5.Map 과 DTO 비교
+=>DTO는 메소드를 호출해서 대입하고 가져오기 때문에 오류를 발생시킬 가능성이 줄어든다는 장점은 있지만 데이터 구조가 변경되는 경우에 수정할 부분이 많아 집니다.
+관계형 데이터베이스(RDBMS - 테이블 기반의 데이터베이스)의 특징입니다.
+
+=>Map을 사용하면 put 이라는 메소드를 이용할 때 문자열로 키를 지정하고 get으로 읽어올 때 문자열로 키를 대입해야 하는데 이 때 키 이름등의 오류가 많이 발생합니다.
+데이터 구조가 변경되더라도 저장과 읽기 할 때 키만 변경하면 됩니다.
+NoSQL 데이터베이스의 특징
+
+**Web Front End
+HTML -> CSS -> JavaScript -> HTML5
+HTML5는 JavaScript를 사용
+
+IDE는 Eclipse를 사용하는데 Front End만 하는 경우에는 느려서 VSCode, Aptana Studio 등을 이용해도 됩니다.
+Eclipse는 WAS가 없으면 웹 프로그램을 실행할 수 없음
+
+
+
+
+
+
+
+
+
+
+
+

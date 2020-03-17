@@ -1,0 +1,640 @@
+**HTML
+1.Tag: 브라우저가 해석해서 랜더링하기 위한 명령어
+=>하나의 페이지에서 중복될 수 있습니다.
+
+2.class: 동일한 디자인을 적용하기 위해서 태그에 적용하는 속성
+=>하나의 페이지에서 중복될 수 있습니다.
+
+3.id: 자바스크립트에서 하나의 태그를 구분하기 위해서 적용하는 속성
+=>하나의 페이지에서는 절대로 중복될 수 없습니다.
+
+4.name: 서버에서 처리하기 위해 붙이는 이름
+=>중복될 수 있습니다.
+
+5.attribute: 태그 내에서 설정하는 옵션으로 key-value 형태로 설정
+<태그 옵션이름='값'> : 스크래핑을 할 때는 a 태그의 href 속성이 가장 중요
+
+6.selector: 별도로 설정하는 것이 아니고 css 에서 태그들을 선택하기 위해 만든 문법
+태그
+.클래스이름
+#id
+
+7.xpath: 별도로 설정하는 것이 아니고 브라우저가 태그의 경로를 나타내기 위해서 사용하는 문법
+태그의 경로를 구분해서 나타내기 때문에 중복될 수 없습니다.
+
+**java가 실행을 할 때 클래스를 찾는 방법
+1.자신의 애플리케이션에 찾습니다.
+
+2.1번에서 없으면 jvm이 제공하는 라이브러리에서 찾습니다.
+
+3.자바실행을 할 때 자신의 build path에 추가된 라이브러리를 jvm에 로드를 합니다.
+2번에서도 없으면 build path에 추가된 라이브러리에서 찾습니다.
+=>build path에 추가될 때는 링크가 설정됩니다.
+=>외부 라이브러리를 사용할 때는 프로젝트에서 포함해서 배포를 하던가 다운로드 링크를 같이 제공해야 합니다.
+
+**HTML Parsing
+=>Java 에서는 Python 의 BeautifulSoup 와 유사한 JSoup 라는 라이브러리를 이용
+1.https://www.naver.com에서 원하는 항목의 값 가져오기
+1)프로젝트의 build path 에 jsoup 라이브러리를 추가
+=>www.mvnrepository.com에서 jsoup를 검색해서 다운로드
+=>다운로드 받은 파일을 프로젝트에 복사
+=>복사한 파일을 선택해서 마우스 오른쪽을 클릭하고 [Build Path] - [Add To Build Path]를 실행
+
+2)코드를 작성
+public class NaverMain {
+
+	public static void main(String[] args) {
+		//필요한 HTML을 다운로드 : https://www.naver.com에서 다운로드
+		String html = null;
+		try {
+			//다운로드 받을 URL을 생성
+			//URL에 한글이 있으면 URLEncoder.encode 이용해서 인코딩을 해야 합니다.
+			String addr = "https://www.naver.com";
+			URL url = new URL(addr);
+			
+			//연결
+			HttpURLConnection con = (HttpURLConnection)url.openConnection();
+			con.setConnectTimeout(30000);
+			con.setUseCaches(false);
+			
+			//데이터를 다운로드
+			StringBuilder sb = new StringBuilder();
+			BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			while(true) {
+				String line = br.readLine();
+				if(line == null) {
+					break;
+				}
+				sb.append(line + "\n");
+			}
+			
+			//사용한 스트림 정리
+			br.close();
+			con.disconnect();
+			//데이터 확인
+			html = sb.toString();
+			//System.out.println(html);
+			
+			
+		}catch(Exception e) {
+			System.out.println("다운로드 예외:" + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		if(html == null) {
+			System.out.println("다운로드 받은 문자열이 없습니다.");
+			return;
+		}
+		
+		//HTML 파싱을 해서 원하는 자료구조를 만들기
+		try {
+			//문자열을 메모리에 DOM(Document Object Model)으로 펼치기
+			Document document = Jsoup.parse(html);
+			//span 태그 가져오기 - 태그는 중복될 수 있으므로 여러 개 리턴
+			/*
+			Elements span = document.getElementsByTag("span");
+			//가져온 데이터를 순회하면서 출력
+			for(int i=0; i < span.size(); i=i+1) {
+				Element element = span.get(i);
+				System.out.println(element.text());
+			}
+			*/
+			
+			//클래스 이름을 이용해서 찾아오기
+			/*
+			Elements span = document.getElementsByClass("an_txt");
+			//가져온 데이터를 순회하면서 출력
+			for(int i=0; i < span.size(); i=i+1) {
+				Element element = span.get(i);
+				System.out.println(element.text());
+			}
+			*/
+			
+			//선택자 이용
+			Elements span = document.select("#PM_ID_serviceNavi > li:nth-child(9) > a > span.an_txt");
+			//가져온 데이터를 순회하면서 출력
+			for(int i=0; i < span.size(); i=i+1) {
+				Element element = span.get(i);
+				//text() 대신에 getAttr(String key)를 이용하면 속성의 값을 가져옴
+				System.out.println(element.text());
+			}
+			
+		}catch(Exception e) {
+			System.out.println("파싱 예외:" + e.getMessage());
+			e.printStackTrace();
+		}
+
+	}
+
+}
+
+2.한겨레 신문사에서 검색을 해서 실제 기사를 전부 읽어서 파일에 저장하기
+=>검색을 이용해서 데이터를 읽어올 때는 주소 패턴을 정확하게 이해
+http://search.hani.co.kr/Search?command=query&keyword=%EB%8D%B0%EC%9D%B4%ED%84%B0%EB%B6%84%EC%84%9D&media=news&submedia=&sort=d&period=all&datefrom=2000.01.01&dateto=2020.01.28&pageseq=2
+
+keyword 가 검색어
+datefrom 이 시작날짜 dateto가 종료 날짜
+pageseq가 페이지 번호 - 0부터 시작
+
+=>기사 개수를 읽어오는 것이 먼저 - 반복문을 언제까지 돌려하는지 설정
+
+=>기사 검색이나 게시판, sns  검색의 경우 검색의 결과로 나온것은 대부분 제목과 본문의 링크입니다.
+검색의 결과에서 링크를 전부 찾아서 실제 기사나 본문의 내용을 읽어와야 합니다.
+
+	public static void main(String[] args) {
+		//한겨레 신문사 웹 페이지에서 코로나 로 검색된 기사 내용을 전부 파일에 저장하기
+		
+		//1.코로나로 검색된 기사 개수 파악하기
+		//기사 개수를 저장할 변수
+		int cnt = 0;
+		try {
+			//한글로 된 검색어를 인코딩
+			String keyword = URLEncoder.encode("코로나", "utf-8");
+			//한겨레 신문사 뉴스 검색 URL 만들기
+			String addr = "http://search.hani.co.kr/Search?command=query&keyword=" 
+						  + keyword 
+						  + "&media=news&submedia=&sort=d&period=all"
+						  + "&datefrom=2000.01.01&dateto=2020.01.28&pageseq=0";
+			URL url = new URL(addr);
+			//연결 옵션과 연결
+			HttpURLConnection con = (HttpURLConnection)url.openConnection();
+			con.setConnectTimeout(20000);
+			con.setUseCaches(false);
+			
+			//문자열을 전부 읽어서 sb에 저장하기
+			StringBuilder sb = new StringBuilder();
+			BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			while(true) {
+				String line = br.readLine();
+				if(line == null) {
+					break;
+				}
+				sb.append(line + "\n");
+			}
+			String html = sb.toString();
+			br.close();
+			con.disconnect();
+			//데이터 확인 - 확인되면 주석 처리
+			//System.out.println(html);
+			
+			//html을 DOM 으로 펼치기
+			Document document = Jsoup.parse(html);
+			
+			//태그 이름으로 찾기
+			//Elements spans = document.getElementsByTag("span");
+			
+			//클래스이름으로 찾기
+			//Elements spans = document.getElementsByClass("total");
+			
+			//선택자를 이용해서 찾기
+			Elements spans = document.select(
+					"#contents > div.search-result-section.first-child > div > span");
+			
+			String temp = spans.get(0).text();
+			//240 건 이라고 temp 에 저장
+			//240만 추출해서 정수로 변환해서 cnt에 저장
+			//공백으로 분할한 후 첫번째 데이터를 정수로 변환해서 cnt에 저장
+			String [] ar = temp.split(" ");
+			cnt = Integer.parseInt(ar[0]);
+			//System.out.println(cnt);
+			 
+		}catch(Exception e) {
+			System.out.println("기사 개수 파악 예외:" + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		if(cnt <= 0) {
+			System.out.println("검색된 기사가 없습니다.");
+			return;
+		}
+		
+		//검색된 데이터의 링크를 전부 찾아서 list에 삽입
+		ArrayList <String> list = new ArrayList<String>();
+		try {
+			//페이지 개수 구하기
+			int pagesu = cnt / 10;
+			if(pagesu % 10 != 0) {
+				pagesu = pagesu + 1;
+			}
+			
+			//페이지 단위로 순회
+			for(int i=0; i<pagesu; i=i+1) {
+				//한글로 된 검색어를 인코딩
+				String keyword = URLEncoder.encode("코로나", "utf-8");
+				//한겨레 신문사 뉴스 검색 URL 만들기
+				String addr = "http://search.hani.co.kr/Search?command=query&keyword=" 
+							  + keyword 
+							  + "&media=news&submedia=&sort=d&period=all"
+							  + "&datefrom=2000.01.01&dateto=2020.01.28&pageseq=" + i;
+				URL url = new URL(addr);
+				
+				//연결 객체 만들기
+				HttpURLConnection con = (HttpURLConnection)url.openConnection();
+				con.setConnectTimeout(10000);
+				con.setUseCaches(false);
+				
+				//특정 페이지의 데이터를 읽지 못하더라도 다음 페이지의 데이터를 읽기 위해서 반복문안에 예외처리문장 삽입
+				try {
+					StringBuilder sb = new StringBuilder();
+					BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+					while(true) {
+						String line = br.readLine();
+						if(line == null) {
+							break;
+						}
+						sb.append(line + "\n");
+					}
+					String html = sb.toString();
+					br.close();
+					con.disconnect();
+					
+					Document document = Jsoup.parse(html);
+					Elements links = document.select("dl > dt > a");
+					for(int j=0; j<links.size(); j=j+1) {
+						//a 태그 안에 있는 문자열을 가져오기
+						//System.out.println(links.get(j).text());
+						
+						//a 태그의 href 속성의 값 가져오기
+						//System.out.println(links.get(j).attr("href"));
+						list.add(links.get(j).attr("href"));
+					}
+					//System.out.println(list.size());
+					
+				}catch(Exception e) {
+					System.out.println("링크 수집 실패:" + e.getMessage());
+					e.printStackTrace();
+				}
+				
+			}
+			
+			
+		}catch(Exception e) {
+			System.out.println("링크 수집 예외:" + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		//list에 저장된 링크의 기사 데이터를 전부 읽어서 파일에 저장하기
+		try {
+			for(String addr : list) {
+				try {
+					URL url = new URL(addr);
+					HttpURLConnection con = (HttpURLConnection)url.openConnection();
+					con.setUseCaches(false);
+					con.setConnectTimeout(10000);
+					
+					StringBuilder sb = new StringBuilder();
+					BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+					while(true) {
+						String line = br.readLine();
+						if(line == null) {
+							break;
+						}
+						sb.append(line + "\n");
+					}
+					String html = sb.toString();
+					br.close();
+					con.disconnect();
+					//System.out.println(html);
+					//파일에 기록
+					
+					Document document = Jsoup.parse(html);
+					//class가 title 인 태그만 찾아오기
+					Elements articles = document.getElementsByClass("text");
+					//찾아온 데이터를 파일에 기록
+					for(int i=0; i<articles.size(); i=i+1) {
+						PrintWriter pw = new PrintWriter(
+								new FileOutputStream("./코로나.txt", true));
+						pw.println(articles.get(i).text());
+						pw.flush();
+						pw.close();
+					}
+					
+					
+					
+					//실제 여러 개의 페이지에서 스크래핑 할 때 딜레이를 주는 것이 좋습니다.
+					//Thread.sleep(1000);
+				}catch(Exception e) {
+					System.out.println("기사 읽기 예외:" + e.getMessage());
+				}
+			}
+			
+		}catch(Exception e) {
+			System.out.println("링크 읽기 예외:" + e.getMessage());
+			e.printStackTrace();
+		}
+		
+	}
+
+
+**일반적인 방법으로 web의 데이터를 못 읽는 경우
+1.ajax 를 이용해서 동적으로 데이터를 가져와서 출력하는 경우
+=>ajax: 현재 페이지를 다시 호출하지 않고 동적으로 데이터를 가져오는 기술
+java 의 HttpURLConnection 이나 python의 requests 모듈은 접속했을 때 존재하는 데이터만 읽어 올 수 있습니다.
+
+2.로그인을 해야만 사용이 가능한 데이터
+
+**selenium
+=>웹 페이지를 테스트 하기 위한 라이브러리로 출발
+=>브라우저를 실행시켜 직접 제어가능한 라이브러리
+=>브라우저로 URL에 접속한 후 일정 시간 대기 한 후 페이지의 데이터를 읽어내면 ajax 형태로 읽어오는 데이터도 사용이 가능
+=>자바스크립트를 이용해서 로그인과 같은 폼에 데이터 입력이 가능하기 때문에 로그인 한 후 접근 가능한 데이터도 사용이 가능
+=>자바 이외 파이썬에서도 사용이 가능
+
+1.준비
+1)selenium 라이브러리를 다운로드 받아서 프로젝트에 포함
+- www.seleniumhq.org에서 다운로드
+- 다운로드 받은 파일을 프로젝트에 복사하고 파일을 선택한 후 [Build Path] - [Add To Build Path]
+
+2)동작시키고자 하는 브라우저의 드라이버 파일을 다운로드
+=>브라우저 없이 하고자 하면 pantom.js를 다운로드 받으면 되는데 deprecated
+=>chrome 의 경우는 버전에 맞는 드라이버를 다운로드 
+https://chromedriver.chromium.org/downloads 에서 다운로드 한 후 압축해제
+
+2.크롬을 실행시켜 사이트에 접속
+1)크롬 드라이버 이름과 드라이버 위치를 시스템 프로퍼티에 추가
+System.setProperty("webdriver.chrome.driver", String 드라이버 파일의 경로);
+
+2)크롬 실행
+WebDriver driver = new ChromeDriver();
+
+3)사이트 접속
+driver.get("사이트 URL");
+
+4)사이트의 html
+drvier.getPageSource()
+
+5)크롬을 실행시켜 naver에 접속하고 html 가져오기
+	public static void main(String[] args) {
+		//크롬 드라이버의 위치를 프로퍼티에 추가
+		System.setProperty("webdriver.chrome.driver", "c:\\chromedriver.exe");
+		//크롬 실행
+		WebDriver driver = new ChromeDriver();
+		//크롬에서 사이트에 접속
+		driver.get("https://www.naver.com");
+		//접속한 사이트의 html 가져오기
+		System.out.println(driver.getPageSource());
+	}
+
+3.Element 선택
+driver.findElement(By.id, "id")
+driver.findElement(By.xpath, "xpath")
+
+driver.findElements(By.tagName, "tag")
+driver.findElements(By.class, "class")
+
+선택한 요소가 폼의 입력도구 인 경우 .send_keys(String value) 를 호출하면 value 폼의 입력도구가 채워짐
+선택한 요소가 폼의 버튼이나 링크 인 경우 .click() 를 호출하면 버튼이나 링크를 클릭한 효과
+폼의 submit 이면 .submit()을 호출하면 폼의 데이터를 전송
+
+4.페이지 접속과 해제
+get(String url): url에 접속
+
+close(): 종료
+
+5.프레임(페이지를 나누어서 다른 html을 불러온다던가 다른 DOM 객체를 가져와서 출력)전환
+switchTo().frame(프레임 Element)
+
+6.크롬을 실행시키지 않고 작업
+ChromeOptions options = new ChromeOptions();
+options.addArguments("headless");
+WebDriver driver = new ChromeDriver(options);
+
+7.다음 로그인을 해서 카페에 글 쓰기
+public class DaumLogin {
+
+	public static void main(String[] args) {
+		//크롬 드라이버의 위치를 프로퍼티에 추가
+		System.setProperty("webdriver.chrome.driver", "c:\\chromedriver.exe");
+		//크롬 실행
+		WebDriver driver = new ChromeDriver();
+		//크롬에서 다음 로그인 사이트에 접속
+		driver.get("https://logins.daum.net/accounts/signinform.do?url=https%3A%2F%2Fwww.daum.net%2F");
+		
+		//아이디와 비밀번호 입력받기
+		Scanner sc = new Scanner(System.in);
+		System.out.print("아이디를 입력하세요:");
+		String id = sc.nextLine();
+		System.out.print("비밀번호를 입력하세요:");
+		String pw = sc.nextLine();
+		
+		//아이디란과 비밀번호 입력란에 입력받은 내용을 입력하기
+		driver.findElement(By.xpath("//*[@id=\"id\"]")).sendKeys(id);
+		driver.findElement(By.xpath("//*[@id=\"inputPwd\"]")).sendKeys(pw);
+		
+		//로그인 버튼 클릭
+		driver.findElement(By.xpath("//*[@id=\"loginBtn\"]")).click();
+		
+		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		//카페에 접속
+		//ggangpae1 - wnddkd1969
+		driver.get("http://cafe.daum.net/samhak7/_memo");
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		//프레임을 전환 : down 이라는 프레임으로 전환
+		driver.switchTo().frame(driver.findElement(By.id("down")));
+		System.out.print("입력할 메모:");
+		String memo = sc.nextLine();
+		//입력받은 내용을 입력란에 추가
+		driver.findElement(By.xpath(
+				"//*[@id=\"memoForm\"]/div/table/tbody/tr[1]/td[1]/div/textarea")).sendKeys(memo);
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		//등록 버튼 클릭
+		driver.findElement(By.xpath(
+			"//*[@id=\"memoForm\"]/div/table/tbody/tr[1]/td[2]/a[1]/span[2]")).click();
+		sc.close();
+		
+	}
+
+}
+
+**람다(Lambda)
+=>자바에서의 람다는 함수형 프로그래밍을 지원하기 위해서 1.7에서부터 지원하기 시작한 이름없는 함수
+=>메소드가 하나 뿐인 인터페이스를 구현해서 사용할 때 람다를 이용해서 대입하는 것이 가능
+=>Intelli J 나 Android Studio 의 경우 메소드가 하나 뿐인 인터페이스를 anonymous를 이용해서  작성하면 람다로 자동 수정됩니다.
+=>이전의 자바는 완전한 객체 지향 언어라서 메소드의 매개변수로 함수를 대입할 수 없었습니다.
+누군가에게 작업만을 수행해달라고 요청을 해야 하는 경우 자바는 객체를 만들어서 메소드 형태로 대입한 후 요청을 했습니다.
+이런 이유로 자바로 작업을 요청하는 경우 시스템이 무거워졌습니다.
+이러한 문제를 해결하기 위해서 등장했던 언어들이 jvm을 사용하는 Scala, Closure, Kotlin 같은 언어들입니다.
+위의 언어들은 마지막에는 java로 번역되서 jvm위에서 실행됩니다.
+
+=>자바에서도 이러한 함수형 프로그래밍을 지원하기 위해서 등장시킨 개념이 람다와 스트림입니다.
+1.8이상에서만 사용이 가능
+
+1.메소드가 하나 뿐인 인터페이스의 구현
+=>public void run 이라는 메소드를 소유한 Runnable 이라는 인터페이스가 있습니다.
+이 인터페이스는 스레드를 만들어주는 인터페이스
+1)인터페이스를 구현한 클래스를 생성하고 인스턴스를 만들어서 사용
+public class RunnableImpl implements Runnable {
+
+	@Override
+	public void run() {
+		//클래스를 만들어서 사용한다고 출력
+		try {
+			for(int i=0; i<10; i=i+1) {
+				Thread.sleep(1000);
+				System.out.println("클래스를 만들어서 사용");
+			}
+		}catch(Exception e) {
+			System.out.println("예외발생:" + e.getMessage());
+		}
+
+	}
+
+}
+
+2)main 메소드
+public class ThreadMain {
+
+	public static void main(String[] args) {
+		//Runnable 인터페이스를 구현한 클래스를 이용해서 스레드 생성 및 실행
+		//인스턴스를 1개만 만들어서 사용한다면 메모리 낭비 - 클래스를 만들었기 때문에 클래스는 메모리에서 삭제가 안됨
+		Thread th1 = new Thread(new RunnableImpl());
+		th1.start();
+		
+		//클래스를 만들지 않고 사용 - anonymous class
+		Thread th2 = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					for(int i=0; i<10; i=i+1) {
+						Thread.sleep(1000);
+						System.out.println("anonymous class 이용");
+					}
+				}catch(Exception e) {
+					System.out.println("예외:" + e.getMessage());
+				}
+			}
+		});
+		th2.start();
+		
+		//람다 이용
+		//인스턴스를 만드는 과정도 없고 메소드 이름도 없지만 위와 동일한 기능을 수행
+		Thread th3 = new Thread(
+			()->{
+				try {
+					for(int i=0; i<10; i=i+1) {
+						Thread.sleep(1000);
+						System.out.println("람다 이용");
+					}
+				}catch(Exception e) {
+					System.out.println("예외:" + e.getMessage());
+			}
+		});
+		
+		th3.start();
+
+	}
+
+}
+
+2.자바에서 람다
+1)직접 호출해서 메소드를 실행할 때는 
+인터페이스 변수 = 람다식;
+변수.메소드();
+
+2)1.8 이상의 API를 사용하는 경우에는 람다식만 대입해서 메소드를 사용
+
+3.람다식 작성 요령
+(타입 매개변수, 타입 매개변수...) -> {메소드 내용 작성; return 데이터}
+=>매개변수의 자료형은 생략 가능 : 호출할 때 대입되는 데이터를 가지고 자료형을 유추
+=>매개변수가 없을 때는 ()을 해야 하지만 매개변수가 1개인 경우는 ()을 생략가능
+=>메소드 내용이 한 줄 이면 {} 해도 됨
+=>리턴 타입은 작성할 필요없고 return을 해야 하면 return 데이터; 만 해주면 됩니다.
+
+4.람다식을 사용할 수 있는 인터페이스는 메소드가 반드시 1개만 존재해야 합니다.
+이러한 인터페이스는 @FuntionalInterface 라는 어노테이션을 이용해서 생성
+
+
+5.람다 작성
+//매개변수가 없고 리턴타입이 없는 메소드를 소유한 인터페이스
+interface NoArgNoReturn{
+	public void method1();
+}
+
+//매개변수가 있고 리턴 타입이 없는 경우 : 원본에 작업을 해서 원본을 변환시키거나 출력하는 인터페이스
+interface ArgNoReturn{
+	public void method2(int x);
+}
+
+//매개변수는 없고 리턴 타입만 있는 경우 : 거의 없는 경우
+interface NoArgReturn{
+	public double method3();
+}
+
+//매개변수가 있고 리턴타입이 있는 경우 - 가장 많은 경우
+interface ArgReturn{
+	public int method4(String str);
+}
+
+
+public class LambdaMain {
+
+	public static void main(String[] args) {
+		//매개변수가 없고 리턴도 없는 인터페이스 활용 
+		NoArgNoReturn ob1 = () -> {System.out.println("매개변수가 없고 리턴도 없는 람다");};
+		ob1.method1();
+		
+		//매개변수가 있는 경우 - 매개변수의 자료형은 생략이 가능, 매개변수가 1개인 경우는 ( )로 감싸지 않아도 됩니다.
+		ArgNoReturn ob2 = (int x) ->{System.out.println(x + 10);};
+		ob2.method2(100);
+		
+		//매개변수는 없고 리턴만 있는 경우 - 거의 없음
+		NoArgReturn ob3 = () ->{return 10.3;};
+		double d = ob3.method3();
+		System.out.println(d);
+		
+		//매개변수가 있고 리턴이 있는 경우 - 데이터를 가공해서 리턴하는 함수
+		ArgReturn ob4 = (str) ->{return Integer.parseInt(str);};
+		int i = ob4.method4("123219");
+		System.out.println(i);
+	}
+
+}
+
+6.람다식을 사용할 수 있는 인터페이스
+=>1.8 버전 이상에서는 java.util.function 패키지에서 기본적인 람다식을 사용할 수 있는 인터페이스를 제공
+Consumer: 매개변수는 있고 리턴 값은 없는 메소드를 소유한 인터페이스
+Supplier: 매개변수는 없고 리턴 값만 있는 메소드를 소유한 인터페이스
+Function: 매개변수가 있고 리턴 값도 있는 메소드를 소유한 인터페이스 - 변환
+Operator: 매개변수가 있고 리턴 값도 있는 메소드를 소유한 인터페이스
+              매개변수를 누적해서 연산해서 리턴하는 메소드를 소유한 인터페이스 - 연산(합계, 평균, 최대값..)
+Predicate: 매개변수가 있는 리턴 값도 있는 메소드를 소유한 인터페이스
+              리턴 값이 boolean
+              조건에 맞는 데이터만 골라내는 메소드를 소유한 인터페이스
+=>기본적으로 제너릭을 적용 - 매개변수의 자료형은 Generic으로 설정
+
+//Consumer 인터페이스는 매개변수가 1개이고 리턴타입이 없는 메소드를 소유
+		Consumer <String> consumer = (t)->{System.out.println(t);};
+		consumer.accept("Java Lambda");
+		
+		//Function 인터페이스는 매개변수가 1개이고 리턴타입이 있는 메소드를 소유
+		//제너릭에서 앞의 자료형은 매개변수의 자료형이고 뒤의 자료형은 리턴타입의 자료형
+		//데이터를 받아서 변환한 후 리턴해주는 메소드
+		Function <String, String> function = (str) -> {
+			if(str.length() <= 3) return str;
+			else return str.substring(0, 3) + "...";};
+		String r = function.apply("hi");
+		System.out.println(r);
+		r = function.apply("Hello World");
+		System.out.println(r);
+
+
+
+
+
+
+
+

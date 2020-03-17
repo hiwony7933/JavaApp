@@ -1,0 +1,541 @@
+**자바에서의 제어문
+1.분기문: if(조건에 의한 분기 - boolean), switch(값에 의한 분기 - 정수, 문자열)
+2.반복문: while, do~while, for
+3.규칙
+1)제어문은 하나의 블록이어서 제어문 안에 만든 변수는 제어문 안에서만 사용이 가능
+2)제어문 내의 실행 문장이 하나의 명령어라면 { } 생략 가능
+3)제어문 안에 제어문을 포함 할 수 있음
+
+for(int i=0; i<10; i=i+1){
+	System.out.println("i:" + i);
+}
+
+System.out.println("i:" + i); //이 구문은 에러
+
+for(int i=0; i<10; i=i+1)
+	System.out.println("i:" + i);
+//이 경우 실행 명령어가 1개 이므로 { }를 생략할 수 있음
+//이 경우 들여쓰기를 정확하게 하지 않으면 코드의 가독성을 떨어뜨릴 수 있기 때문에 권장하지는 않음
+
+**기타 제어문
+1.break
+=>switch 구문에서 switch 구문을 종료하거나 반복문에서 조건문과 함께 사용되서 반복문을 중단하는 역할을 수행하는 명령어
+
+2.continue
+=>반복문에서 조건문과 함께 사용되서 다음 반복으로 넘어가는 역할을 수행하는 명령어
+
+		// 1부터 10까지 출력하는 구문
+		for (int i = 1; i < 11; i = i + 1) {
+			// 4의 배수가 되면 반복문 중단 - 1, 2, 3 중단
+			if (i % 4 == 0) {
+				break;
+			}
+
+			System.out.println("i:" + i);
+		}
+
+		System.out.println("============================");
+		// 1부터 10까지 출력하는 구문
+		for (int i = 1; i < 11; i = i + 1) {
+			// 4의 배수가 되면 다음 반복으로 이동
+			//1,2,3,5,6,7,9,10
+			if (i % 4 == 0) {
+				continue;
+			}
+			System.out.println("i:" + i);
+		}
+
+
+3.java 에서는 반복문에 레이블을 설정할 수 있고 break 나 continue를 할 때 뒤에 레이블을 붙이면 레이블이 반복문을 빠져 나가거나 다음 반복으로 이동할 수 있습니다.
+C 언어에는 go to 가 있어서 특정할 레이블이 붙은 곳으로 바로 이동이 가능
+구조적 프로그래밍 기법에서 go to 사용을 배제하는 것을 권장
+java 에서는 go to 사용을 배제하기 위해서 예약어지만 사용할 수 없도록 함
+여러 개의 반복문에서 break 만으로 여러 개의 반복문을 빠져 나가거는 것이 복잡해 졌습니다.
+반복문에 레이블을 붙일 수 있도록 함
+
+1)레이블 추가
+레이블 : 반복문
+
+2)레이블 사용
+break 레이블;
+
+3)레이블이 없는 경우는 가장 가까이서 만든 반복문을 중단
+
+
+**제어문 연습
+1.교번 처리
+=>일정한 패턴 반복, 나머지 연산자 이용
+=>ON 과 OFF를 교대로 10번 출력
+
+for(int i=0; i<10; i = i+1){
+	if(i%2 ==0){
+		System.out.println("ON");
+	}else{
+		System.out.println("OFF");
+	}
+}
+
+2.반복문을 이용한 일정한 패턴의 문자열 만들기
+
+#동아일보에서 자바로 검색했을 때 총 데이터 건수는 1164개이고
+url은 아래와 같은 형태, 페이지마다 p의 값이 15씩 증가
+제어문을 이용해서 전체 데이터를 스크랩 할 수 있는 URL을 생성
+먼저 구해야 하는 것은 전체 데이터 건수를 가지고 몇 번 반복문을 수행해야 하는지 찾아야 하고
+반복문안에서 URL을 만들어 주어야 합니다.
+
+http://www.donga.com/news/search?p=1&query=자바
+
+http://www.donga.com/news/search?p=16&query=자바
+
+http://www.donga.com/news/search?p=31&query=자바
+
+		//첫번째 페이지 URL 
+		//http://www.donga.com/news/search?p=1&query=자바
+		
+		//각페이지 마다 기사가 15개씩 있어서 p의 값이 15씩 증가
+		
+		//총 데이터 건수는 1164
+		
+		int total = 1164;
+		//페이지 개수 만들 때는 나누어 떨어지지 않으면 몫 + 1
+		int pagesu = 1164 / 15;
+		
+		if(total % 15 != 0 ) {
+			pagesu = pagesu + 1;
+		}
+		
+		for(int i=0; i<pagesu; i=i+1) {
+			//페이지 별 기사의 시작 번호
+			int p = 15 * i + 1;
+			//기사의 URL 만들기
+			System.out.println(
+				"http://www.donga.com/news/search?p=" + p +
+				"&query=자바");
+		}
+
+
+3.정수를 입력받아서 소수 판별하기
+=>소수(prime): 2부터 자신의 절반이 되는 숫자까지 나누어서 한번도 나누어 떨어지지 않으면 소수
+//하나의 정수 입력받기
+		Scanner sc = new Scanner(System.in);
+		System.out.print("소수 판별할 정수 입력:");
+		int su = sc.nextInt();
+		
+		//소수 판별을 위한 플래그 변수를 생성
+		boolean flag = false;
+		//소수 판별 반복문
+		for(int i=2; i<= su/2; i=i+1) {
+			//이 경우는 소수가 아님
+			//조건을 만족한 경우 플래그 변수의 값을 변경
+			if(su % i == 0) {
+				flag = true;
+				break;
+			}
+		}
+		
+		//su가 소수인지 출력
+		if(flag == false) {
+			System.out.println(su + "는 소수");
+		}else {
+			System.out.println(su + "는 소수가 아님");
+		}
+		
+		sc.close();
+
+4. 2-1000까지 소수의 개수 구하기
+
+5.반복문 2개를 이용한 별 출력
+* 1개 출력: System.out.print("*")
+줄바꿈: System.out.print("\n");
+System.out.println("");
+
+*****
+*****
+*****
+*****
+*****
+for(int i=0; i<5; i=i+1){
+	for(int j=0; j<5; j=j+1){
+		System.out.print("*");
+	}
+	System.out.print("\n");
+}
+
+*
+**
+***
+**
+*
+위처럼 계속 하나의 패턴이 적용되는 것이 아니고 일정한 패턴이 적용되다가 다른 패턴이 적용되면 분할해서 구현
+처음 3줄은 늘어나고 다음 2줄은 줄어드는 패턴
+for(int i=0; i<5; i=i+1){
+	if(i <= 2){
+		for(int j=0; j<i+1; j=j+1){
+			System.out.print("*");
+		}
+	}else{
+		for(int j=0; j<5-i; j=j+1){
+			System.out.print("*");
+		}
+	}
+	System.out.print("\n");	
+}
+ 
+**연습문제
+하나의 정수를 입력받아서 아래처럼 출력하기
+5를 입력한 경우
+
+    0
+   1 2
+   3  4
+ 5      6
+78901234
+
+0앞에 공백이 4개
+1앞에 공백이 3개 그리고 1과 2사이에 공백 1개
+3앞에 공백이 2개 그리고  3과 4 사이에 공백이 3개
+5앞에 공백이 1개 그리고  5와 6 사이에 공백이 5개
+아래쪽에는 숫자가 9개의 숫자를 출력
+
+9다음의 숫자는 다시 0
+
+**Array(배열)
+=>동일한 자료형으로 구성된 데이터의 연속적인 집합
+=>참조형으로 heap(메모리 할당을 하고 프로그래머가 메모리 해제를 할 수 있는 공간)에 생성
+=>참조형이므로 변수는 데이터의 시작위치를 의미합니다.
+
+1.배열을 사용하는 이유: 관리의 편리성 때문
+=>3명의 점수를 저장해야 하는 경우
+이 때 배열이 없다면 3개의 변수를 만들어서 각각 저장
+배열을 이용하면 하나의 이름으로 저장해서 관리 가능
+
+2.배열 생성
+1)처음부터 데이터가 존재하는 경우
+배열요소의 자료형 [ ] 배열이름 = {데이터를 나열};
+=>이 때 [ ]는 배열이름 다음에 입력해도 되는데 대부분 앞에 기재
+
+2)데이터가 존재하지 않아서 크기만 먼저 만드는 경우
+배열요소의 자료형 [ ] 배열이름 = new 배열요소의 자료형[개수];
+=>개수만큼 저장할 수 있는 공간을 만들고 기본값으로 채움
+=>boolean은 false로 숫자 데이터는 0으로 채워지고 참조형은 null로 채워집니다.
+
+3)배열은 한 번 만들면 크기가 변경되지 않습니다.
+
+3.배열 요소의 접근
+=>배열이름[인덱스] 형태로 접근해서 읽고 쓰기를 합니다.
+=>인덱스는 0부터 시작
+=>배열이 만들어진 않은 상태에서 데이터에 접근하면 NullPointerException 발생
+=>배열의 인덱스 범위를 넘어서면 ArrayIndexOutOfBoundsException 발생
+=>배열의 데이터 개수 확인은 .length 을 호출
+
+4.참조형에서 메모리 해제
+=>가리키고 있는 변수가 없으면 Garbage Collection이 알아서 메모리 해제
+=>보통은 사용이 끝나면 null을 대입해주면 나중에 자동으로 해제됩니다.
+
+5.배열을 생성하고 배열의 데이터를 접근하고 출력 한 후 메모리 해제
+		//초기값을 가지고 문자열 배열을 생성
+		String [] strAr = {"발렌수엘라", "클레멘테", "루게릭" };
+		
+		//데이터 1개 출력 - 0번째 데이터 출력
+		System.out.println(strAr[0]);
+		
+		//데이터 전체 출력
+		//배열이름.length 는 배열의 데이터 개수를 정수로 리턴
+		for(int i=0; i<strAr.length; i=i+1) {
+			System.out.println(strAr[i]);
+		}
+		
+		System.out.println("====================");
+		//배열을 기본값으로 만들고 나중에 데이터를 채우기
+		
+		//참조형 변수가 생성된 것이지 데이터가 만들어진 것은 아니어서 NullPointerException
+		/*
+		String [] homerunHitters = null ;
+		System.out.println(homerunHitters[0]);
+		*/
+		
+		String [] homerunHitters = new String[3];
+		//공간만 할당받은 배열에 데이터 채우기
+		homerunHitters[0] = "김봉연";
+		homerunHitters[1] = "이만수";
+		homerunHitters[2] = "김성한";
+		//ArrayIndexOutOfBoundsException 발생
+		//homerunHitters[3] = "김성래";
+		
+		for(int i=0; i<homerunHitters.length; i=i+1) {
+			System.out.println(homerunHitters[i]);
+		}
+
+6.배열은 빠른 열거(Iterator) 형태로 접근 가능
+for (임시변수 : 배열){
+	임시변수를 이용하면 배열의 모든 요소를 순서대로 하나씩 접근 가능
+}
+
+7.배열의 데이터를 전부 접근하는 경우에는 빠른 열거가 효율적이고 일반적인 반복문을 이용할 때는 데이터의 개수를 반복문 바깥에서 임시변수에 저장하고 접근하는 것을 고려
+
+String [] homerunHitters = new String[3];
+		//공간만 할당받은 배열에 데이터 채우기
+		homerunHitters[0] = "김봉연";
+		homerunHitters[1] = "이만수";
+		homerunHitters[2] = "김성한";
+		//ArrayIndexOutOfBoundsException 발생
+		//homerunHitters[3] = "김성래";
+		
+		//반복문 안에서 동일한 참조형 내부 데이터를 접근하는 것은 비효율적
+		for(int i=0; i<homerunHitters.length; i=i+1) {
+			System.out.println(homerunHitters[i]);
+		}
+		
+		System.out.println("=====================");
+		//참조형 내부 데이터를 기본형으로 저장하고 반복문 안에서 기본형의 데이터를 접근
+		//두번째 접근 부터 메모리 접근 횟수가 줄어듬
+		int len = homerunHitters.length;
+		for(int i=0; i<len; i=i+1) {
+			System.out.println(homerunHitters[i]);
+		}
+		System.out.println("=====================");
+		//빠른 열거를 이용한 접근
+		//데이터의 시작과 끝을 직접 작성하지 않기 때문에 Index 오류를 일으키지 않게 됩니다.
+		for(String temp : homerunHitters) {
+			System.out.println(temp);
+		}
+
+8.다차원 배열
+=>배열의 차원이 2개 이상인 배열
+=>배열이 모여서 새로운 배열을 만드는 것
+1)2차원 배열 생성
+=>초기값을 가지고 생성
+배열 요소 1개의 자료형 [ ][ ] 배열이름 = {{데이터 나열}, {데이터 나열} ...}
+
+=>메모리 할당을 한 후 나중에 데이터를 채우는 방법
+모두 동일한 크기로 생성: 모든 행의 열 개수를 동일하게 생성
+배열 요소 1개의 자료형 [ ][ ] 배열이름 = new 배열 요소의 자료형[행의 개수][열의 개수];
+
+행 마다 열의 개수를 다르게 생성
+배열 요소 1개의 자료형 [ ][ ] 배열이름 = new 배열 요소의 자료형[행의 개수][];
+배열이름[행번호] = new 배열 요소의 자료형[열의 개수];
+배열이름[행번호] = new 배열 요소의 자료형[열의 개수];
+...
+
+2)배열의 데이터 접근
+2차원 배열의 경우 데이터 1개 접근 : 배열이름[행번호][열번호]
+행에 해당하는 배열의 접근: 배열이름[행번호]
+
+3)length
+배열이름.length: 행 개수
+배열이름[행번호].length: 행 번호에 해당하는 배열의 열 개수
+
+4)빠른 열거 사용 가능
+for(배열요소의 자료형 임시변수 : 이차원배열){
+	각 행에 해당하는 배열이 임시변수에 대입
+}
+
+5)이차원 배열을 생성하고 인덱스를 이용해서 접근해보고 빠른 열거를 이용해서 접근
+		//초기 데이터를 가지고 이차원 배열 생성
+		String [][] players = {{"이종범", "윤석민", "안치홍"}, 
+				{"박병호", "김하성", "이정후"}};
+		//인덱스를 이용해서 배열의 모든 데이터 접근
+		//행의 개수를 가져오기
+		int rowCnt = players.length;
+		for(int i=0; i<rowCnt; i=i+1) {
+			//각 행 별 열의 개수 가져오기
+			int colCnt = players[i].length;
+			for(int j=0; j<colCnt; j=j+1) {
+				System.out.print(players[i][j] + "\t");
+			}
+			System.out.print("\n");
+		}
+		
+		//빠른 열거를 이용한 접근
+		System.out.println("=============================");
+		//이차원 배열을 일차원 배열로 접근
+		for(String [] row : players) {
+			//일차원 배열 내의 데이터를 열 단위로 접근
+			for(String col : row) {
+				System.out.print(col + "\t");
+			}
+			System.out.print("\n");
+		}
+		
+		System.out.println("===============================");
+		//이차원 배열 중에서 모든 행의 열 개수가 동일하다면 하나의 반복문으로 모든 데이터에 접근 가능
+		//players 배열처럼 모든 행의 열 개수가 3개로 동일하다면 하나의 반복문으로 접근이 가능
+		
+		//전체 데이터 개수를 구한 후 열의 개수를 이용하면 됨
+		
+		//전체 데이터 개수
+		int tot = players.length * players[0].length;
+		//하나의 행에 해당하는 열의 개수
+		int colCnt = players[0].length;
+		//하나의 반복문으로 전체 데이터 접근
+		for(int i=0; i<tot; i=i+1) {
+			System.out.print(players[i/colCnt][i%colCnt] + "\t");
+			if(i % colCnt == colCnt-1) {
+				System.out.print("\n");
+			}
+		}
+
+
+3.배열 연습문제
+1)1-45까지의 서로 다른 정수를 6개 입력받아서 일차원 배열에 저장
+		// 키보드로부터 데이터를 입력받기 위한 객체를 생성
+		Scanner sc = new Scanner(System.in);
+
+		// 1-45 까지의 정수 6개를 저장할 자료구조를 생성
+		int[] lotto = new int[6];
+
+		// 6번 반복
+		for (int i = 0; i < 6; i = i + 1) {
+			// 정수를 입력받아서 su에 저장
+			System.out.print(i + "번째 숫자:");
+			int su = sc.nextInt();
+			// 1부터 45까지의 숫자만 저장하고 그 이외의 경우는 다시 입력하도록 하기
+			if (su < 1 || su > 45) {
+				System.out.print("1-45 사이만 입력하세요\n");
+				// 이번 입력은 무효
+				i = i - 1;
+				// 아래로 내려가지 않고 다음 반복으로 넘어가기
+				continue;
+			}
+
+			// 데이터 중복 검사
+			if (i > 0) {
+				boolean flag = false;
+
+				// 첫번째 데이터부터 현재 입력할 데이터 앞 까지 비교
+				for (int j = 0; j < i; j = j + 1) {
+					// 현재 입력받은 데이터와 이전에 입력 받은 데이터가 같은지 비교
+					if (lotto[j] == su) {
+						flag = true;
+						System.out.print("중복된 데이터입니다. 다시 입력해주세요\n");
+						// 더 이상 비교할 필요가 없음
+						break;
+					}
+				}
+
+				// 이전 데이터와 동일한 데이터를 만나면 다시 입력받도록 작성
+				if (flag == true) {
+					i = i - 1;
+					continue;
+				}
+			}
+
+			// 입력받은 데이터를 배열에 저장
+			lotto[i] = su;
+		}
+
+		// 입력받은 데이터 출력
+		for (int temp : lotto) {
+			System.out.print(temp + "\t");
+		}
+
+		sc.close();
+
+2)합계 문제
+		//합계를 구할 때 합을 저장할 변수를 규칙이 성립되기 전 또는 합을 구하기 전까지의 값으로 초기화
+		
+		int [] ar = {30, 47, 51, 27, 38};
+		int sum = 0;
+		for(int data : ar) {
+			sum = sum + data;
+		}
+		System.out.print("합계:" + sum);
+		
+		//피보나치 수열
+		//1,1,2,3,5,8,13,21,34,55,89,....
+		//피보나치 수열은 첫번째 와 두번째는 무조건 1 세번째 부터는 이전 2개 항의 합
+		//입력받은 정수의 항 까지 피보나치 수열의 합을 구하시오.
+		
+		Scanner sc = new Scanner(System.in);
+		
+		System.out.print("합을 구할 항의 번호:");
+		int su = sc.nextInt();
+		if(su == 1) {
+			System.out.print("합은 1\n");
+		}else if(su == 2) {
+			System.out.print("합은 2\n");
+		}else {
+			//두번째 항 까지는 규칙이 적용되지 않기 때문에 미리 합계를 구해놓아야 합니다.
+			sum = 2;
+			//현재 항의 두번째 이전 데이터를 저장할 변수
+			int f2 = 1;
+			//현재 항의 첫번째 이전 데이터를 저장할 변수
+			int f1 = 1;
+			//현재 계산될 항
+			int f = 2;
+			for(int i=3; i<=su; i=i+1) {
+				sum = sum + f;
+				
+				//현재 피보나치 수열의 값을 계산하는 방법
+				f2 = f1;
+				f1 = f;
+				f = f1 + f2;
+			}
+			System.out.print("합은 " + sum);
+		}
+		
+		
+		sc.close();
+
+3)최대 최소 문제
+		int [] ar = {30, 47, 51, 27, 38};
+		//위 배열에서 최대값 구하기
+		int max = ar[0];
+		for(int data : ar) {
+			if(max < data) {
+				max = data;
+			}
+		}
+		System.out.print("최대값:" + max + "\n");
+		
+		//위의 데이터 배열에서 40과 가장 가까운 수 찾기
+		//40과의 차이가 최소인 데이터 찾기
+		
+		//첫번째 데이터와 40이 차이 계산하기
+		//차이는 음수가 나올 수 없으므로 음수가 나오면 -1을 곱해서 양수로 만들기
+		int chaMin = ar[0] - 40;
+		if(chaMin < 0) {
+			chaMin = chaMin * -1;
+		}
+		//차이가 가장 작은 데이터의 값을 저장할 변수
+		int first = ar[0];
+		
+		//데이터 순회
+		for(int data : ar) {
+			//40과의 차이 계산
+			int cha = data - 40;
+			if(cha < 0) {
+				cha = cha * -1;
+			}
+			//차이가 최소인 데이터 찾기
+			if(chaMin > cha) {
+				//차이의 최소를 chaMin에 저장
+				chaMin = cha;
+				//차이가 최소인 데이터를 fisrt에 저장
+				first = data;
+			}
+		}
+		
+		System.out.print("40과 가까운 수:" + first + "\n");
+		/*
+		//두 점 사이의 거리 계산
+		(x1, y1), (x2, y2)
+		=>(x1 - x2)제곱 + (y1-y2)제곱 의 제곱근을 구하는 거리 계산 방법이 있는데 유클리디안 거리
+		=>(x1 - x2)절대값 + (y1 - y2)절대값 의 형태로 거리 계산하는 방법을 맨하탄 거리라고 합니다.
+		*/
+
+**github url
+https://github.com/itggangpae/java0106
+https://github.com/아이디/레포지토리이름
+
+github에서 java application project 가져오기
+=>URL을 복사
+=>[File] - [Import] - [Git] - [Clone a URI]를 선택
+
+
+
+
+
+
+
+

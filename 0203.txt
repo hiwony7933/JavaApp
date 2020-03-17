@@ -1,0 +1,35 @@
+**MS-Windows 용 실행 파일 만들기
+=>소스를 작성한 것은 IDE 안에서만 실행이 됩니다.
+=>PC 용 애플리케이션을 만들어서 IDE 가 없어도 실행이 되도록 하기 위해서 생성
+
+1.jsmooth 프로그램 설치 : https://sourceforge.net/projects/jsmooth/files/ 에서 다운로드
+
+2.jsmooth가 바로 안되고 자바를 다운로드 받아야 한다는 메시지가 출력되는 경우
+=>jdk 가 jre가 설치되어 있지 않으면 설치
+=>JAVA_HOME 이라는 환경변수를 만들어서 jdk 나 jre 경로를 설정해주면 됩니다.
+=>Mac 이나 Linux 를 처음 공부하면 vi 에디터를 이용해서 환경변수 설정하는 방법을 알아두어야 합니다.
+vim 이 vi의 발전된 editor
+
+[탐색기]실행 -> 내 PC 선택하고 마우스 오른쪽을 눌러서 [속성] 클릭 -> 왼쪽 화면에서 [고급 시스템 설정]을 클릭 -> [고급] 탭에서 [환경변수]를 클릭 -> [새로 만들기]를 클릭
+
+변수 이름은 JAVA_HOME
+변수 값은 jdk 나 jre가 설치된 디렉토리(C:\Program Files\Java\jdk1.8.0_231)
+
+3.exe로 만들 프로젝트를 jar(java archive 의 약자 - 자바 압축) 파일로 export
+=>프로젝트를 선택하고 마우스 오른쪽을 클릭해서 [export]를 선택
+java 탭에서 runnable jar file 을 선택하고 실행할 클래스(main 메소드 소유)를 선택하고 저장할 위치와 이름을 설정을 하면 됩니다.
+
+4.jsmooth를 실행
+1)skeleton 아이콘을 클릭해서 프로그램 종류를 설정
+=>gui가 아닌 경우는 console wrapper 을 선택하고 gui 인 경우는 windowed wrapper를 선택
+
+2)excutable 아이콘을 클릭해서 실행 파일 이름과 아이콘을 설정
+
+3)application 아이콘을 클릭하고 실행파일을 만들 jar 파일을 선택하고 실행할 클래스를 선택
+실행파일을 만들 jar 파일 선택 : CLASS PATH 에서 + 아이콘을 눌러서 선택
+
+4)톱니바퀴 아이콘 이나 [Project] - [Complie]을 클릭해서 프로젝트 이름을 설정하고 실행파일 생성
+
+
+
+
